@@ -71,3 +71,5 @@ echo "::endgroup::"
 		echo "::endgroup::"
 	done
 )
+
+rm -f screenshot/*

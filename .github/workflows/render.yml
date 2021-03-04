@@ -24,7 +24,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: render/OpenTTD
-        key: ${{ steps.key.outputs.image }}-openttd-3 # Increase the number whenever dependencies / patch are modified
+        key: ${{ steps.key.outputs.image }}-openttd-4 # Increase the number whenever dependencies / patch are modified
 
     - name: Set up Python 3.8
       uses: actions/setup-python@v1
@@ -74,12 +74,12 @@ jobs:
     - name: Render images
       run: |
         for i in $(ls entries/*.sav 2>/dev/null); do
-          if [ ! -e screens/.${i}.done ]; then
-            name=$(echo $(basename ${i}) | sed s/.sav$//)
+          name=$(echo $(basename ${i}) | sed s/.sav$//)
+          if [ ! -e entries/.${name}.done ]; then
             echo "::group::${name} savegame"
 
             render/render.sh ${i} screens/
-            touch screens/.${name}.done
+            touch entries/.${name}.done
 
             git add -A
             git commit -m "Add: renders for ${name}"
