@@ -1,0 +1,84 @@
+diff --git a/src/blitter/CMakeLists.txt b/src/blitter/CMakeLists.txt
+index ddcc9a0082..8c3214ee21 100644
+--- a/src/blitter/CMakeLists.txt
++++ b/src/blitter/CMakeLists.txt
+@@ -1,3 +1,10 @@
++add_files(
++    8bpp_base.cpp
++    8bpp_base.hpp
++    8bpp_optimized.cpp
++    8bpp_optimized.hpp
++)
++
+ add_files(
+     32bpp_anim.cpp
+     32bpp_anim.hpp
+@@ -7,10 +14,6 @@ add_files(
+     32bpp_optimized.hpp
+     32bpp_simple.cpp
+     32bpp_simple.hpp
+-    8bpp_base.cpp
+-    8bpp_base.hpp
+-    8bpp_optimized.cpp
+-    8bpp_optimized.hpp
+     8bpp_simple.cpp
+     8bpp_simple.hpp
+     CONDITION NOT OPTION_DEDICATED
+diff --git a/src/vehicle_base.h b/src/vehicle_base.h
+index f80faf1e39..1a475eb1e3 100644
+--- a/src/vehicle_base.h
++++ b/src/vehicle_base.h
+@@ -1186,7 +1186,7 @@ struct SpecializedVehicle : public Vehicle {
+ 		bool sprite_has_changed = false;
+ 
+ 		/* Skip updating sprites on dedicated servers without screen */
+-		if (_network_dedicated) return;
++//		if (_network_dedicated) return;
+ 
+ 		/* Explicitly choose method to call to prevent vtable dereference -
+ 		 * it gives ~3% runtime improvements in games with many vehicles */
+diff --git a/src/video/dedicated_v.cpp b/src/video/dedicated_v.cpp
+index 22b9dbb1ab..b0995b5c71 100644
+--- a/src/video/dedicated_v.cpp
++++ b/src/video/dedicated_v.cpp
+@@ -20,6 +20,8 @@
+ #include "../company_func.h"
+ #include "../core/random_func.hpp"
+ #include "../saveload/saveload.h"
++#include "../screenshot.h"
++#include "../viewport_func.h"
+ #include "../thread.h"
+ #include "../window_func.h"
+ #include "dedicated_v.h"
+@@ -274,11 +276,30 @@ void VideoDriver_Dedicated::MainLoop()
+ 		return;
+ 	}
+ 
++	extern uint16 _tick_counter;
++	static uint16 tick_start = _tick_counter;
++
++	FixTitleGameZoom();
++	_pause_mode = PM_UNPAUSED;
++	_cursor.fix_at = false;
++	_game_mode = GM_MENU;
++
+ 	while (!_exit_game) {
+ 		if (!_dedicated_forks) DedicatedHandleKeyInput();
+ 
+-		ChangeGameSpeed(_ddc_fastforward);
++		ChangeGameSpeed(true);
+ 		this->Tick();
+ 		this->SleepTillNextTick();
++
++		uint16 tick = _tick_counter - tick_start;
++		char filename_prefix[1024];
++		seprintf(filename_prefix, lastof(filename_prefix), "tick_%03d_", tick);
++		std::string filename = filename_prefix;
++
++		MakeScreenshot(SC_DEFAULTZOOM, (filename + "2560_1440").c_str(), 2560, 1440);
++
++		if (tick > 30 * 1000 / 30) {
++			break;
++		}
+ 	}
+ }

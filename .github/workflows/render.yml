@@ -1,0 +1,99 @@
+name: Render
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  render:
+    name: Render
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Prepare cache key
+      id: key
+      run: |
+        echo "::set-output name=image::$ImageOS-$ImageVersion"
+
+    - name: Cache build folder
+      uses: actions/cache@v2
+      with:
+        path: render/OpenTTD
+        key: ${{ steps.key.outputs.image }}-openttd-3 # Increase the number whenever dependencies / patch are modified
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Prepare
+      run: |
+        echo "::group::Markdown"
+        pip install markdown
+        pip install -U git+git://github.com/TylerTemp/md-video.git
+        echo "::endgroup::"
+
+        echo "::group::Build dependencies"
+        sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+          cmake \
+          debhelper \
+          ffmpeg \
+          g++ \
+          git \
+          make \
+          liblzma-dev \
+          lsb-release \
+          zlib1g-dev \
+          # EOF
+        echo "::endgroup::"
+
+        echo "::group::OpenGFX"
+        mkdir -p /usr/share/games/openttd/baseset
+        (
+          cd /usr/share/games/openttd/baseset
+          curl -L https://cdn.openttd.org/opengfx-releases/0.6.0/opengfx-0.6.0-all.zip -o opengfx-all.zip
+          unzip opengfx-all.zip
+          rm -f opengfx-all.zip
+        )
+        echo "::endgroup::"
+
+        echo "::group::OpenTTD binary"
+        render/render.sh --prepare
+        echo "::endgroup::"
+
+        echo "::group::Configure git"
+        git config --global user.email "competition@openttd.org"
+        git config --global user.name "DorpsGek"
+        echo "::endgroup::"
+
+    - name: Render images
+      run: |
+        for i in $(ls entries/*.sav 2>/dev/null); do
+          if [ ! -e screens/.${i}.done ]; then
+            name=$(echo $(basename ${i}) | sed s/.sav$//)
+            echo "::group::${name} savegame"
+
+            render/render.sh ${i} screens/
+            touch screens/.${name}.done
+
+            git add -A
+            git commit -m "Add: renders for ${name}"
+
+            echo "::endgroup::"
+          fi
+        done
+
+    - name: Generate HTML files
+      run: |
+        render/html.sh
+        git add -A
+        git commit -m "Update: HTML files to reflect latest entries"
+
+    - name: Push to GitHub
+      run: |
+        git push
