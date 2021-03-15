@@ -1,6 +1,9 @@
 # The OpenTTD 1.11 Title Screen Competition
 
-![image](winner-1.10.png)
+*!!TODO!!* 2TallTyler needs to rewrite this text so people know how to vote and that this is the voting :D
+
+
+![image](@@URL@@/layout/winner-1.10.png)
 
 Hello everyone, and welcome to the 1.11 title screen competition!
 This is your opportunity to design and help choose the savegame which plays behind the main menu of OpenTTD; pictured above is **ALEXbr**'s winning entry for last year's 1.10 release.
@@ -36,5 +39,3 @@ More details to follow.
 Feel free to check out [last year's competition](https://www.tt-forums.net/viewtopic.php?f=29&t=86795) for inspiration.
 
 Good luck!
-
-# Entries

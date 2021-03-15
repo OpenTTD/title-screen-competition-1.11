@@ -16,6 +16,7 @@ When you push this to GitHub, a GitHub Action will automatically do the rest.
 Simply update the savegame in the `entries` folder, including the hidden `.done` file.
 After pushing this to Github, a GitHub Action will automatically do the rest.
 
-## Why "docs"
+## Where is the rendered Markdown?
 
-GitHub allows two folders to be published via their GitHub Pages: either root (`/`), or `/docs`.
+This can be found in the `markdown` folder.
+This is automatically updated on every change.
