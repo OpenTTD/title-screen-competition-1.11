@@ -1,5 +1,5 @@
 # The OpenTTD 1.11 Title Screen Competition
-![image](https://TrueBrain.github.io/title-screen-competition-1.11/layout/winner-1.10.png)
+![image](https://openttd.github.io/title-screen-competition-1.11/layout/winner-1.10.png)
 
 Hello everyone, and welcome to the 1.11 title screen competition!
 
