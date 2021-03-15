@@ -41,31 +41,34 @@ screens_path=$(realpath ${2})
 prefix=$(echo $(basename ${1}) | sed s/.sav$//)
 
 mkdir -p ${screens_path}
-
-echo "::group::Create screenshots"
 cd ${render_path}/OpenTTD/build
-rm -f screenshot/*
-# Run OpenTTD to create a screenshot per tick.
-./openttd -D -b 8bpp-optimized -x -c empty.cfg -g ${savegame}
-echo "::endgroup::"
 
 (
-	cd screenshot
-	# Convert the screenshots to GIFs for lower resolutions (to keep the filesize ~10MB).
-	for res in "1024:768" "1280:1024" "1440:900"; do
-		filename=$(echo ${screens_path}/${prefix}-$(echo ${res} | sed s/:/_/))
-		echo "::group::Animated GIF (${res})"
-		ffmpeg -framerate 33.33 -i tick_%03d_2560_1440.png -i ${palette} -filter_complex "fps=33.33[x];[x]crop=${res}:0:0[y];[y][1:v]paletteuse" -y ${filename}.gif
+	for res in "1024x768" "1280x1024" "1440x900" "1920x1080" "2560x1440"; do
+		echo "::group::Render screenshots (${res})"
+		rm -f screenshot/*
+		# Run OpenTTD to create a screenshot per tick.
+		./openttd -D -b 8bpp-optimized -x -c empty.cfg -g ${savegame} -r ${res}
 		echo "::endgroup::"
-	done
 
-	# Convert the screenshots to mp4s for all resolutions, but a bit lossy; this to keep the filesize ~10MB.
-	for res in "1024:768" "1280:1024" "1440:900" "1920:1080" "2560:1440"; do
-		filename=$(echo ${screens_path}/${prefix}-$(echo ${res} | sed s/:/_/))
-		echo "::group::Movie (${res})"
-		ffmpeg -framerate 33.33 -i tick_%03d_2560_1440.png -filter_complex "fps=33.33[x];[x]crop=${res}:0:0" -crf 28 -pix_fmt yuv420p -y ${filename}.mp4
-		ffmpeg -i ${filename}.mp4 -i ${palette} -vframes 1 -f image2 -filter_complex "[0:v]paletteuse" -y ${filename}.png
-		echo "::endgroup::"
+		filename=$(echo ${screens_path}/${prefix}-$(echo ${res} | sed s/x/_/))
+
+		(
+			cd screenshot
+			cp tick_000.png ${filename}.png
+
+			if [ "${res}" != "1920x1080" ] && [ "${res}" != "2560x1440" ]; then
+				# Convert the screenshots to GIFs for lower resolutions (to keep the filesize ~10MB).
+				echo "::group::Animated GIF (${res})"
+				ffmpeg -framerate 33.33 -i tick_%03d.png -i ${palette} -filter_complex "fps=33.33[x];[x][1:v]paletteuse" -y ${filename}.gif
+				echo "::endgroup::"
+			fi
+
+			# Convert the screenshots to mp4s for all resolutions, but a bit lossy; this to keep the filesize ~10MB.
+			echo "::group::Movie (${res})"
+			ffmpeg -framerate 33.33 -i tick_%03d.png -filter_complex "fps=33.33" -crf 28 -pix_fmt yuv420p -y ${filename}.mp4
+			echo "::endgroup::"
+		)
 	done
 )
 

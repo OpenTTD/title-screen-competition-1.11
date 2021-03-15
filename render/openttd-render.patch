@@ -24,24 +24,45 @@ index ddcc9a0..8c3214e 100644
      8bpp_simple.cpp
      8bpp_simple.hpp
      CONDITION NOT OPTION_DEDICATED
+diff --git a/src/openttd.cpp b/src/openttd.cpp
+index 235d36f..30fb578 100644
+--- a/src/openttd.cpp
++++ b/src/openttd.cpp
+@@ -345,7 +345,7 @@ static void LoadIntroGame(bool load_newgrfs = true)
+ 	SetupColoursAndInitialWindow();
+
+ 	/* Load the default opening screen savegame */
+-	if (SaveOrLoad("opntitle.dat", SLO_LOAD, DFT_GAME_FILE, BASESET_DIR) != SL_OK) {
++	if (SaveOrLoad(_file_to_saveload.name, SLO_LOAD, DFT_GAME_FILE, BASESET_DIR) != SL_OK) {
+ 		GenerateWorld(GWM_EMPTY, 64, 64); // if failed loading, make empty world.
+ 		SetLocalCompany(COMPANY_SPECTATOR);
+ 	} else {
 diff --git a/src/vehicle_base.h b/src/vehicle_base.h
 index f80faf1..1a475eb 100644
 --- a/src/vehicle_base.h
 +++ b/src/vehicle_base.h
 @@ -1186,7 +1186,7 @@ struct SpecializedVehicle : public Vehicle {
  		bool sprite_has_changed = false;
- 
+
  		/* Skip updating sprites on dedicated servers without screen */
 -		if (_network_dedicated) return;
 +//		if (_network_dedicated) return;
- 
+
  		/* Explicitly choose method to call to prevent vtable dereference -
  		 * it gives ~3% runtime improvements in games with many vehicles */
 diff --git a/src/video/dedicated_v.cpp b/src/video/dedicated_v.cpp
-index e905a9d..e4ab8d8 100644
+index e905a9d..7773ee7 100644
 --- a/src/video/dedicated_v.cpp
 +++ b/src/video/dedicated_v.cpp
-@@ -20,6 +20,8 @@
+@@ -13,6 +13,7 @@
+ #include "../network/network.h"
+ #include "../network/network_internal.h"
+ #include "../console_func.h"
++#include "../error.h"
+ #include "../genworld.h"
+ #include "../fileio_type.h"
+ #include "../fios.h"
+@@ -20,6 +21,8 @@
  #include "../company_func.h"
  #include "../core/random_func.hpp"
  #include "../saveload/saveload.h"
@@ -50,38 +71,55 @@ index e905a9d..e4ab8d8 100644
  #include "../thread.h"
  #include "../window_func.h"
  #include "dedicated_v.h"
-@@ -268,11 +270,34 @@ void VideoDriver_Dedicated::MainLoop()
- 
+@@ -248,31 +251,35 @@ void VideoDriver_Dedicated::MainLoop()
+ 	_network_dedicated = true;
+ 	_current_company = _local_company = COMPANY_SPECTATOR;
+
+-	/* If SwitchMode is SM_LOAD_GAME, it means that the user used the '-g' options */
+-	if (_switch_mode != SM_LOAD_GAME) {
+-		StartNewGameWithoutGUI(GENERATE_NEW_SEED);
+-	} else {
+-		/* First we need to test if the savegame can be loaded, else we will end up playing the
+-		 *  intro game... */
+-		if (SaveOrLoad(_file_to_saveload.name, _file_to_saveload.file_op, _file_to_saveload.detail_ftype, BASE_DIR) == SL_ERROR) {
+-			/* Loading failed, pop out.. */
+-			DEBUG(net, 0, "Loading requested map failed, aborting");
+-			return;
+-		} else {
+-			/* We can load this game, so go ahead */
+-			_switch_mode = SM_LOAD_GAME;
+-		}
+-	}
+-
+ 	this->is_game_threaded = false;
+
  	/* Done loading, start game! */
- 
+
 +	extern uint16 _tick_counter;
 +	uint16 tick_start = 0;
 +
-+	FixTitleGameZoom();
-+	_cursor.fix_at = false;
-+	_game_mode = GM_MENU;
++	_switch_mode = SM_MENU;
 +
  	while (!_exit_game) {
  		if (!_dedicated_forks) DedicatedHandleKeyInput();
- 
+
 -		ChangeGameSpeed(_ddc_fastforward);
 +		ChangeGameSpeed(true);
  		this->Tick();
  		this->SleepTillNextTick();
 +
-+		if (tick_start == 0) {
-+			_pause_mode = PM_UNPAUSED;
-+			tick_start = _tick_counter;
-+		}
++		if (tick_start == 0) tick_start = _tick_counter;
 +
 +		uint16 tick = _tick_counter - tick_start;
 +		char filename_prefix[1024];
-+		seprintf(filename_prefix, lastof(filename_prefix), "tick_%03d_", tick);
++		seprintf(filename_prefix, lastof(filename_prefix), "tick_%03d", tick);
 +		std::string filename = filename_prefix;
 +
-+		MakeScreenshot(SC_DEFAULTZOOM, (filename + "2560_1440").c_str(), 2560, 1440);
++		HideActiveErrorMessage();
++		DeleteAllNonVitalWindows();
++		MakeScreenshot(SC_VIEWPORT, filename.c_str());
 +
-+		if (tick > 30 * 1000 / 30) {
++		if (tick >= 999) {
 +			break;
 +		}
  	}

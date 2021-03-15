@@ -24,7 +24,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: render/OpenTTD
-        key: ${{ steps.key.outputs.image }}-openttd-5 # Increase the number whenever dependencies / patch are modified
+        key: ${{ steps.key.outputs.image }}-openttd-6 # Increase the number whenever dependencies / patch are modified
 
     - name: Set up Python 3.8
       uses: actions/setup-python@v1
