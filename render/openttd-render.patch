@@ -1,5 +1,5 @@
 diff --git a/src/blitter/CMakeLists.txt b/src/blitter/CMakeLists.txt
-index ddcc9a008..8c3214ee2 100644
+index ddcc9a0..8c3214e 100644
 --- a/src/blitter/CMakeLists.txt
 +++ b/src/blitter/CMakeLists.txt
 @@ -1,3 +1,10 @@
@@ -25,7 +25,7 @@ index ddcc9a008..8c3214ee2 100644
      8bpp_simple.hpp
      CONDITION NOT OPTION_DEDICATED
 diff --git a/src/vehicle_base.h b/src/vehicle_base.h
-index f80faf1e3..1a475eb1e 100644
+index f80faf1..1a475eb 100644
 --- a/src/vehicle_base.h
 +++ b/src/vehicle_base.h
 @@ -1186,7 +1186,7 @@ struct SpecializedVehicle : public Vehicle {
@@ -38,7 +38,7 @@ index f80faf1e3..1a475eb1e 100644
  		/* Explicitly choose method to call to prevent vtable dereference -
  		 * it gives ~3% runtime improvements in games with many vehicles */
 diff --git a/src/video/dedicated_v.cpp b/src/video/dedicated_v.cpp
-index e905a9d2c..5aed70287 100644
+index e905a9d..e4ab8d8 100644
 --- a/src/video/dedicated_v.cpp
 +++ b/src/video/dedicated_v.cpp
 @@ -20,6 +20,8 @@
@@ -50,15 +50,14 @@ index e905a9d2c..5aed70287 100644
  #include "../thread.h"
  #include "../window_func.h"
  #include "dedicated_v.h"
-@@ -268,11 +270,30 @@ void VideoDriver_Dedicated::MainLoop()
+@@ -268,11 +270,34 @@ void VideoDriver_Dedicated::MainLoop()
  
  	/* Done loading, start game! */
  
 +	extern uint16 _tick_counter;
-+	static uint16 tick_start = _tick_counter;
++	uint16 tick_start = 0;
 +
 +	FixTitleGameZoom();
-+	_pause_mode = PM_UNPAUSED;
 +	_cursor.fix_at = false;
 +	_game_mode = GM_MENU;
 +
@@ -69,6 +68,11 @@ index e905a9d2c..5aed70287 100644
 +		ChangeGameSpeed(true);
  		this->Tick();
  		this->SleepTillNextTick();
++
++		if (tick_start == 0) {
++			_pause_mode = PM_UNPAUSED;
++			tick_start = _tick_counter;
++		}
 +
 +		uint16 tick = _tick_counter - tick_start;
 +		char filename_prefix[1024];
