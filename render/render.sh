@@ -10,12 +10,9 @@ palette=${render_path}/palette.png
 if [ ! -e ${render_path}/OpenTTD ]; then
 	(
 		cd ${render_path}
-		# Needed while #8804 is not merged yet.
-		#git clone https://github.com/OpenTTD/OpenTTD
-		git clone https://github.com/TrueBrain/OpenTTD
+		git clone https://github.com/OpenTTD/OpenTTD
 
 		cd OpenTTD
-		git checkout screenshot-resolution
 		patch -p1 < ${patch}
 	)
 fi
